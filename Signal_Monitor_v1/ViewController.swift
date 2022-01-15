@@ -18,7 +18,7 @@ let Signal_Monitor_Service_CBUUID = CBUUID(string: "4fafc201-1fb5-459e-8fcc-c5c9
 // MARK: - Core Bluetooth characteristic IDs
 let Monitor_Characteristic_CBUUID = CBUUID(string: "BEB5483E-36E1-4688-B7F5-EA07361B26A8")
 let Voltage_Setting_Characteristic_CBUUID = CBUUID(string: "BEB5483E-36E1-4688-B7F6-EA07361B26B9")
-let Voltage_Characteristic_CBUUID = CBUUID(string: "BEB5483E-36E1-4688-B7F6-EA07361B26B7")
+let Voltage_Characteristic_CBUUID = CBUUID(string: "BEB5483E-36E1-4688-B7F6-EA07361B26C7")
 
 
 @available(iOS 15, *)
@@ -72,6 +72,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         // Create a central to scan for, connect to,
         // manage, and collect data from peripherals
         centralManager = CBCentralManager(delegate: self, queue: centralQueue)
+        
     }
     
     override func didReceiveMemoryWarning() {
@@ -201,7 +202,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if characteristic.uuid == Voltage_Characteristic_CBUUID{
                 print("Voltage READING Notify")
                 peripheral.setNotifyValue(true, for: characteristic)
-                ADC_Value = characteristic
+                //ADC_Value = characteristic
             }
         }
     } // END func peripheral(... didDiscoverCharacteristicsFor service
@@ -219,23 +220,29 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
            /*DispatchQueue.main.async { () -> Void in
                 self.timerValueLabel.text = String(count_n_seconds[0])
             }*/
-        } // END if characteristic.uuid ==...
+        } // END if characteristic.uuid == Voltage_Setting_Characteristic_CBUUID
         
         if characteristic.uuid == Monitor_Characteristic_CBUUID {
             
-            // STEP 14: we generally have to decode BLE
-            // data into human readable format
             //let circuit_state = characteristic.value!
             //let value = (String(data: circuit_state, encoding: String.Encoding.ascii)!);
             let circuit_state = [UInt8](characteristic.value!)
+            let path = Bundle.main.path(forResource: "tick", ofType:"mp3")!
+            let url = URL(fileURLWithPath: path)
                         print("Circuit State : ", circuit_state[0])
                         if (circuit_state[0] == 1){
                             print("Play Sound")
                             //let action = 1;
                             play_flag = true;
                             //playSound(audio_action: action)
-                            let systemSoundID: SystemSoundID = 1322
-                                AudioServicesPlaySystemSound (systemSoundID)
+                            //let systemSoundID: SystemSoundID = 1322
+                            //    AudioServicesPlaySystemSound (systemSoundID)
+                            do {
+                                audioPlayer = try AVAudioPlayer(contentsOf: url)
+                                audioPlayer?.play()
+                            } catch {
+                                print("Error loading file")
+                            }
                         } else {
                             print("Dont Play Sound")
                             //let action = 0;
@@ -245,10 +252,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             print("Monitor State : ")
 
-           /*DispatchQueue.main.async { () -> Void in
-                self.timerValueLabel.text = String(count_n_seconds[0])
-            }*/
-        } // END if characteristic.uuid ==...
+        } // END if characteristic.uuid == Monitor_Characteristic_CBUUID
         
         if characteristic.uuid == Voltage_Characteristic_CBUUID {
             
@@ -257,9 +261,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             let ADCCurrentValue = [UInt8](characteristic.value!)
             
             print("Voltage Setting Value...", ADCCurrentValue[0])
-
+            let weight = characteristic.value!
+            print(String(data: weight, encoding: String.Encoding.ascii)!);
+            
            DispatchQueue.main.async { () -> Void in
-                self.ADCValue.text = String(ADCCurrentValue[0])
+                //self.ADCValue.text = String(ADCCurrentValue[0])
+               self.ADCValue.text = String(data: weight, encoding: String.Encoding.ascii)
             }
         } // END if characteristic.uuid ==...
         
